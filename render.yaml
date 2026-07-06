@@ -7,8 +7,4 @@ services:
     startCommand: npm start
     envVars:
       - key: DB_PATH
-        value: /var/data/vendor2u.db
-    disk:
-      name: vendor2u-data
-      mountPath: /var/data
-      sizeGB: 1
+        value: /tmp/vendor2u.db   # using /tmp (ephemeral but works on free tier)
