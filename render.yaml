@@ -6,9 +6,15 @@ services:
     buildCommand: npm install
     startCommand: npm start
     envVars:
-      - key: DB_PATH
-        value: /var/data/vendor2u.db
-    disk:
-      name: vendor2u-data
-      mountPath: /var/data
-      sizeGB: 1
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: SITE_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: FROM_EMAIL
+        sync: false

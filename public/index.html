@@ -46,8 +46,8 @@
                 </div>
             </div>
             <div class="flex items-center gap-4">
-                <button onclick="toggleLoginModal()" class="px-5 py-2 text-sm font-medium text-navy/70 hover:text-navy transition-colors">Log in</button>
-                <button onclick="showBecomeVendor()" class="px-6 py-2.5 bg-brand hover:bg-brand-700 text-white rounded-2xl text-sm font-semibold transition-all">Become a Vendor</button>
+                <button onclick="window.location.href='/login'" class="px-5 py-2 text-sm font-medium text-navy/70 hover:text-navy transition-colors">Vendor Login</button>
+                <button onclick="window.location.href='/login'" class="px-6 py-2.5 bg-brand hover:bg-brand-700 text-white rounded-2xl text-sm font-semibold transition-all">Become a Vendor</button>
             </div>
         </div>
     </nav>
@@ -155,7 +155,7 @@
                 <h4 class="font-semibold text-white mb-4">Platform</h4>
                 <ul class="space-y-2 text-sm">
                     <li><a href="#" onclick="scrollToSearch();return false;" class="hover:text-white">Browse Vendors</a></li>
-                    <li><a href="#" onclick="showBecomeVendor();return false;" class="hover:text-white">For Vendors</a></li>
+                    <li><a href="#" onclick="window.location.href='/login';return false;" class="hover:text-white">For Vendors</a></li>
                 </ul>
             </div>
             <div>
