@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vendor2U - African &amp; Multicultural Event Vendors</title>
+    <title>Vendor2Me - African &amp; Multicultural Event Vendors</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Vendor2U brand palette (pulled from the logo)
+        // Vendor2Me brand palette (pulled from the logo)
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        navy:   { DEFAULT: '#02244F', 700: '#062F63', 800: '#031B3D', 900: '#02132B' },
-                        brand:  { DEFAULT: '#FC700E', 600: '#FC700E', 700: '#E25E00', 50: '#FFF3E9', 100: '#FFE4CC' }
+                        navy:   { DEFAULT: '#400880', 700: '#33066B', 800: '#280552', 900: '#1C043A' },
+                        brand:  { DEFAULT: '#E0A010', 600: '#E0A010', 700: '#B8830C', 50: '#FBF3DF', 100: '#F6E6BC' }
                     }
                 }
             }
@@ -22,22 +22,47 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
-        body { font-family: 'Inter', system-ui, sans-serif; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f7f5fb; }
         .heading-font { font-family: 'Playfair Display', sans-serif; }
         .hero-bg {
-            background: linear-gradient(rgba(2,19,43,0.78), rgba(2,19,43,0.85)), url('https://picsum.photos/id/1015/2000/1200') center/cover;
+            background:
+              radial-gradient(1200px 600px at 20% -10%, rgba(224,160,16,0.25), transparent 60%),
+              linear-gradient(135deg, rgba(28,4,58,0.92), rgba(64,8,128,0.88)),
+              url('https://picsum.photos/id/1015/2000/1200') center/cover;
         }
-        @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(16px) saturate(140%);
+            -webkit-backdrop-filter: blur(16px) saturate(140%);
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 8px 32px rgba(64,8,128,0.08);
+        }
+        .glass-dark {
+            background: rgba(64,8,128,0.55);
+            backdrop-filter: blur(14px) saturate(140%);
+            -webkit-backdrop-filter: blur(14px) saturate(140%);
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .glass-search {
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(28,4,58,0.35);
+        }
+        .card-hover { transition: transform .25s ease, box-shadow .25s ease; }
+        .card-hover:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(64,8,128,0.15); }
+        @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } .card-hover:hover { transform:none; } }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
     <!-- Navbar -->
-    <nav class="bg-white border-b sticky top-0 z-50">
+    <nav class="glass border-b border-white/40 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-8">
                 <div class="flex items-center gap-2.5 cursor-pointer" onclick="goHome()">
-                    <div class="w-10 h-10 bg-navy rounded-xl flex items-center justify-center text-white text-lg font-extrabold tracking-tight">V<span class="text-brand">2</span>U</div>
-                    <span class="text-2xl font-bold tracking-tight text-navy">Vendor<span class="text-brand">2</span>U</span>
+                    <div class="w-10 h-10 bg-navy rounded-xl flex items-center justify-center text-white text-lg font-extrabold tracking-tight">V<span class="text-brand">2</span>M</div>
+                    <span class="text-2xl font-bold tracking-tight text-navy">Vendor<span class="text-brand">2</span>Me</span>
                 </div>
                 <div class="hidden md:flex items-center gap-6 text-sm font-medium text-navy/80">
                     <a href="#" onclick="scrollToSearch(); return false;" class="hover:text-brand transition-colors">Find Vendors</a>
@@ -62,7 +87,7 @@
                 Connect with trusted African and multicultural vendors for weddings, funerals, birthdays &amp; more across the US.
             </p>
             <!-- Search Bar -->
-            <div class="max-w-4xl mx-auto bg-white rounded-3xl p-2 shadow-2xl">
+            <div class="max-w-4xl mx-auto glass-search rounded-3xl p-2">
                 <div class="flex flex-col md:flex-row gap-2">
                     <div class="flex-1 relative">
                         <div class="absolute left-5 top-4 text-gray-400"><i class="fa-solid fa-magnifying-glass"></i></div>
@@ -132,7 +157,7 @@
     <!-- How it Works -->
     <section id="how-section" class="py-20 bg-white scroll-mt-20">
         <div class="max-w-5xl mx-auto px-6 text-center">
-            <h2 class="text-4xl font-bold mb-4 heading-font">How Vendor2U Works</h2>
+            <h2 class="text-4xl font-bold mb-4 heading-font">How Vendor2Me Works</h2>
             <div class="grid md:grid-cols-3 gap-10 mt-16">
                 <div><div class="w-20 h-20 mx-auto bg-brand-50 text-brand rounded-2xl flex items-center justify-center text-4xl mb-6">1</div><h3 class="font-semibold text-xl mb-3">Search &amp; Discover</h3><p class="text-gray-600">Find vendors by location, culture, and service.</p></div>
                 <div><div class="w-20 h-20 mx-auto bg-brand-50 text-brand rounded-2xl flex items-center justify-center text-4xl mb-6">2</div><h3 class="font-semibold text-xl mb-3">Compare &amp; Connect</h3><p class="text-gray-600">Request quotes and compare packages.</p></div>
@@ -146,8 +171,8 @@
         <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-3 gap-10">
             <div>
                 <div class="flex items-center gap-3 text-white mb-6">
-                    <div class="w-11 h-11 bg-white rounded-xl flex items-center justify-center text-xl font-extrabold tracking-tight text-navy">V<span class="text-brand">2</span>U</div>
-                    <span class="text-3xl font-bold">Vendor<span class="text-brand">2</span>U</span>
+                    <div class="w-11 h-11 bg-white rounded-xl flex items-center justify-center text-xl font-extrabold tracking-tight text-navy">V<span class="text-brand">2</span>M</div>
+                    <span class="text-3xl font-bold">Vendor<span class="text-brand">2</span>Me</span>
                 </div>
                 <p class="text-sm">Your event. Your culture. Your vendors.</p>
             </div>
@@ -167,7 +192,7 @@
                 </div>
             </div>
         </div>
-        <div class="text-center text-xs mt-16 border-t border-gray-800 pt-8">© 2026 Vendor2U.com</div>
+        <div class="text-center text-xs mt-16 border-t border-gray-800 pt-8">© 2026 Vendor2Me.com</div>
     </footer>
 
     <!-- Login Modal -->
@@ -222,7 +247,7 @@
     // ---------- Build a vendor card element ----------
     function vendorCard(v) {
         const card = document.createElement('div');
-        card.className = "bg-white rounded-3xl overflow-hidden border border-gray-100 hover:border-brand/30 transition-all cursor-pointer shadow-sm hover:shadow-xl";
+        card.className = "glass card-hover rounded-3xl overflow-hidden cursor-pointer";
         card.innerHTML = `
             <img src="${esc(v.image)}" alt="${esc(v.name)}" class="w-full h-48 object-cover">
             <div class="p-6">
@@ -301,7 +326,7 @@
         const grid = $('categories-grid');
         categories.forEach(cat => {
             const div = document.createElement('div');
-            div.className = "bg-white border border-gray-200 hover:border-brand/40 p-6 rounded-3xl text-center cursor-pointer transition-all hover:shadow-md";
+            div.className = "glass card-hover p-6 rounded-3xl text-center cursor-pointer";
             div.innerHTML = `<div class="text-5xl mb-4">${cat.icon}</div><div class="font-semibold">${cat.name}</div>`;
             div.onclick = () => quickSearch(cat.name);
             grid.appendChild(div);
@@ -393,7 +418,7 @@
             <div class="bg-white max-w-lg w-full rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto">
                 <div class="p-8">
                     <h2 class="text-2xl font-bold mb-1">Become a Vendor</h2>
-                    <p class="text-gray-500 mb-6">List your business on Vendor2U. You'll appear as unverified until reviewed.</p>
+                    <p class="text-gray-500 mb-6">List your business on Vendor2Me. You'll appear as unverified until reviewed.</p>
                     <form onsubmit="submitVendor(event)" class="space-y-4">
                         <input required name="name" placeholder="Business name *" class="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand">
                         <input name="owner" placeholder="Your name" class="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand">

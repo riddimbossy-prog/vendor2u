@@ -3,34 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vendor Login - Vendor2U</title>
+    <title>Vendor Login - Vendor2Me</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { theme: { extend: { colors: {
-            navy:  { DEFAULT: '#02244F', 700: '#062F63', 900: '#02132B' },
-            brand: { DEFAULT: '#FC700E', 600: '#FC700E', 700: '#E25E00', 50: '#FFF3E9' }
+            navy:   { DEFAULT: '#400880', 700: '#33066B', 800: '#280552', 900: '#1C043A' },
+            brand:  { DEFAULT: '#E0A010', 600: '#E0A010', 700: '#B8830C', 50: '#FBF3DF', 100: '#F6E6BC' }
         }}}};
     </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
         body { font-family: 'Inter', system-ui, sans-serif; }
         .heading-font { font-family: 'Playfair Display', sans-serif; }
+        body { background: linear-gradient(135deg, #1C043A 0%, #400880 100%); }
+        .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 20px 60px rgba(28,4,58,0.4); }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col">
-    <nav class="bg-navy text-white">
+    <nav class="text-white" style="background:linear-gradient(135deg,#1C043A,#400880);">
         <div class="max-w-5xl mx-auto px-6 py-4">
             <a href="/" class="flex items-center gap-2.5 w-max">
-                <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-base font-extrabold tracking-tight text-navy">V<span class="text-brand">2</span>U</div>
-                <span class="text-xl font-bold">Vendor<span class="text-brand">2</span>U</span>
+                <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-base font-extrabold tracking-tight text-navy">V<span class="text-brand">2</span>M</div>
+                <span class="text-xl font-bold">Vendor<span class="text-brand">2</span>Me</span>
             </a>
         </div>
     </nav>
 
     <main class="flex-1 flex items-center justify-center px-6 py-12">
         <div class="w-full max-w-md">
-            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+            <div class="glass rounded-3xl p-8">
                 <!-- Tabs -->
                 <div class="flex gap-2 mb-8 bg-gray-100 rounded-2xl p-1">
                     <button id="tab-login" onclick="showTab('login')" class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-white shadow-sm">Log in</button>

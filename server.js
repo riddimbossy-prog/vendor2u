@@ -1,4 +1,4 @@
-// server.js — Vendor2U server: website + API + vendor accounts + dashboard + email.
+// server.js — Vendor2Me server: website + API + vendor accounts + dashboard + email.
 // Backed by PostgreSQL (see db.js). Reads config from environment variables.
 
 const express = require('express');
@@ -175,7 +175,7 @@ module.exports = (async () => {
   });
 
   // ============ PUBLIC VENDOR ENDPOINTS ============
-  app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'Vendor2U Backend Running' }));
+  app.get('/api/health', (req, res) => res.json({ status: 'OK', message: 'Vendor2Me Backend Running' }));
 
   app.post('/api/match', async (req, res) => {
     const { location, budget, cultural, service } = req.body || {};
@@ -260,13 +260,23 @@ module.exports = (async () => {
 
       // Notify the vendor by email if they have one
       if (vendor.email) {
-        const dashLink = SITE_URL ? `${SITE_URL}/dashboard` : 'your Vendor2U dashboard';
-        sendEmail(vendor.email, `New quote request from ${b.customerName || 'a customer'}`,
-          `<h2>New quote request on Vendor2U</h2>
-           <p><b>From:</b> ${escapeHtml(b.customerName || '')} (${escapeHtml(b.customerEmail || '')})</p>
-           <p><b>Event:</b> ${escapeHtml(b.eventType || '')} ${escapeHtml(b.eventDate || '')}</p>
-           <p><b>Message:</b><br>${escapeHtml(b.message || '')}</p>
-           <p>Log in to ${dashLink} to reply.</p>`);
+        const dashUrl = SITE_URL ? `${SITE_URL}/dashboard` : '#';
+        sendEmail(
+          vendor.email,
+          `New quote request from ${b.customerName || 'a customer'}`,
+          brandedEmail({
+            heading: 'You have a new quote request',
+            intro: `${escapeHtml(b.customerName || 'A customer')} is interested in your services on Vendor2Me.`,
+            rows: [
+              ['From', `${escapeHtml(b.customerName || '—')}`],
+              ['Email', `${escapeHtml(b.customerEmail || '—')}`],
+              ['Event', `${escapeHtml(b.eventType || '—')}${b.eventDate ? ' &middot; ' + escapeHtml(b.eventDate) : ''}`],
+              ['Message', `${escapeHtml(b.message || '—')}`]
+            ],
+            buttonText: 'View & reply in your dashboard',
+            buttonUrl: dashUrl
+          })
+        );
       }
 
       res.status(201).json({ success: true, booking: { id, vendorId: b.vendorId, status: 'new' } });
@@ -302,9 +312,56 @@ module.exports = (async () => {
   app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
   app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-  app.listen(PORT, () => console.log(`Vendor2U running on http://localhost:${PORT}`));
+  app.listen(PORT, () => console.log(`Vendor2Me running on http://localhost:${PORT}`));
 })();
 
 function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// Branded HTML email matching the Vendor2Me navy + orange identity.
+function brandedEmail({ heading, intro, rows, buttonText, buttonUrl }) {
+  const detailRows = (rows || []).map(([label, value]) => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #eef0f3;color:#7a8494;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px;width:110px;vertical-align:top;">${label}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #eef0f3;color:#1f2733;font-size:15px;vertical-align:top;">${value}</td>
+    </tr>`).join('');
+
+  const button = (buttonText && buttonUrl && buttonUrl !== '#') ? `
+    <tr><td style="padding:28px 0 8px;">
+      <a href="${buttonUrl}" style="display:inline-block;background:#E0A010;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:14px 28px;border-radius:14px;">${buttonText}</a>
+    </td></tr>` : '';
+
+  return `
+  <!DOCTYPE html>
+  <html>
+  <body style="margin:0;padding:0;background:#f4f5f7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:32px 16px;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:540px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+          <!-- Header -->
+          <tr><td style="background:linear-gradient(135deg,#1C043A,#400880);padding:28px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+              <td style="background:#ffffff;width:40px;height:40px;border-radius:10px;text-align:center;vertical-align:middle;font-weight:800;font-size:16px;color:#400880;">V<span style="color:#E0A010;">2</span>M</td>
+              <td style="padding-left:12px;color:#ffffff;font-size:20px;font-weight:700;">Vendor<span style="color:#E0A010;">2</span>Me</td>
+            </tr></table>
+          </td></tr>
+          <!-- Body -->
+          <tr><td style="padding:36px 32px;">
+            <h1 style="margin:0 0 8px;font-size:22px;color:#1C043A;font-weight:700;">${heading}</h1>
+            <p style="margin:0 0 24px;color:#5a6473;font-size:15px;line-height:1.5;">${intro}</p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              ${detailRows}
+              ${button}
+            </table>
+          </td></tr>
+          <!-- Footer -->
+          <tr><td style="padding:24px 32px;background:#fafbfc;border-top:1px solid #eef0f3;">
+            <p style="margin:0;color:#9aa3b0;font-size:12px;line-height:1.5;">You're receiving this because you have a vendor account on Vendor2Me.com &mdash; your event, your culture, your vendors.</p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+  </html>`;
 }

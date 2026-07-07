@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Vendor2U</title>
+    <title>Dashboard - Vendor2Me</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = { theme: { extend: { colors: {
-            navy:  { DEFAULT: '#02244F', 700: '#062F63', 900: '#02132B' },
-            brand: { DEFAULT: '#FC700E', 600: '#FC700E', 700: '#E25E00', 50: '#FFF3E9' }
+            navy:   { DEFAULT: '#400880', 700: '#33066B', 800: '#280552', 900: '#1C043A' },
+            brand:  { DEFAULT: '#E0A010', 600: '#E0A010', 700: '#B8830C', 50: '#FBF3DF', 100: '#F6E6BC' }
         }}}};
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -17,14 +17,18 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
         body { font-family: 'Inter', system-ui, sans-serif; }
         .heading-font { font-family: 'Playfair Display', sans-serif; }
+        body { background: linear-gradient(135deg, #f7f5fb 0%, #f0ebf9 100%); min-height:100vh; }
+        .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 8px 32px rgba(64,8,128,0.08); }
+        .stat-card { transition: transform .2s ease; }
+        .stat-card:hover { transform: translateY(-3px); }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen">
-    <nav class="bg-navy text-white">
+    <nav class="text-white" style="background:linear-gradient(135deg,#1C043A,#400880);">
         <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
             <a href="/" class="flex items-center gap-2.5">
-                <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-base font-extrabold tracking-tight text-navy">V<span class="text-brand">2</span>U</div>
-                <span class="text-xl font-bold">Vendor<span class="text-brand">2</span>U</span>
+                <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-base font-extrabold tracking-tight text-navy">V<span class="text-brand">2</span>M</div>
+                <span class="text-xl font-bold">Vendor<span class="text-brand">2</span>Me</span>
             </a>
             <div class="flex items-center gap-4 text-sm">
                 <a href="/" class="text-gray-300 hover:text-white">View site</a>
@@ -48,10 +52,10 @@
 
             <!-- Stats -->
             <div class="grid grid-cols-4 gap-4 mb-8">
-                <div class="bg-white rounded-2xl border border-gray-100 p-5"><div class="text-3xl font-bold text-navy" id="s-total">0</div><div class="text-sm text-gray-500 mt-1">Total</div></div>
-                <div class="bg-white rounded-2xl border border-gray-100 p-5"><div class="text-3xl font-bold text-brand" id="s-new">0</div><div class="text-sm text-gray-500 mt-1">New</div></div>
-                <div class="bg-white rounded-2xl border border-gray-100 p-5"><div class="text-3xl font-bold text-green-600" id="s-booked">0</div><div class="text-sm text-gray-500 mt-1">Booked</div></div>
-                <div class="bg-white rounded-2xl border border-gray-100 p-5"><div class="text-3xl font-bold text-gray-700" id="s-week">0</div><div class="text-sm text-gray-500 mt-1">This week</div></div>
+                <div class="glass stat-card rounded-2xl p-5"><div class="text-3xl font-bold text-navy" id="s-total">0</div><div class="text-sm text-gray-500 mt-1">Total</div></div>
+                <div class="glass stat-card rounded-2xl p-5"><div class="text-3xl font-bold text-brand" id="s-new">0</div><div class="text-sm text-gray-500 mt-1">New</div></div>
+                <div class="glass stat-card rounded-2xl p-5"><div class="text-3xl font-bold text-green-600" id="s-booked">0</div><div class="text-sm text-gray-500 mt-1">Booked</div></div>
+                <div class="glass stat-card rounded-2xl p-5"><div class="text-3xl font-bold text-gray-700" id="s-week">0</div><div class="text-sm text-gray-500 mt-1">This week</div></div>
             </div>
 
             <!-- Filter -->
@@ -147,7 +151,7 @@
     function renderList() {
         const list = FILTER === 'all' ? ALL : ALL.filter(b => b.status === FILTER);
         if (!list.length) {
-            $('requests').innerHTML = '<div class="bg-white rounded-2xl border border-gray-100 p-12 text-center"><div class="text-5xl mb-4">📭</div><h3 class="text-xl font-semibold">Nothing here yet</h3><p class="text-gray-500 mt-2">Quote requests from customers will appear here.</p></div>';
+            $('requests').innerHTML = '<div class="glass rounded-2xl p-12 text-center"><div class="text-5xl mb-4">📭</div><h3 class="text-xl font-semibold">Nothing here yet</h3><p class="text-gray-500 mt-2">Quote requests from customers will appear here.</p></div>';
             return;
         }
         $('requests').innerHTML = list.map(card).join('');
@@ -160,7 +164,7 @@
 
     function card(b) {
         return `
-        <div class="bg-white rounded-2xl border border-gray-100 p-6 mb-4">
+        <div class="glass rounded-2xl p-6 mb-4">
             <div class="flex justify-between items-start gap-4">
                 <div>
                     <div class="flex items-center gap-2">

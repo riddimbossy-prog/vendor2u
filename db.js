@@ -1,4 +1,4 @@
-// db.js — PostgreSQL data layer for Vendor2U.
+// db.js — PostgreSQL data layer for Vendor2Me.
 // Connects using the DATABASE_URL environment variable (set on Render).
 // Creates tables on first run and seeds starter vendors.
 
