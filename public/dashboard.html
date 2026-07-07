@@ -181,6 +181,7 @@
     <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const titleCase = (s) => String(s||'').trim().split(/\s+/).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
     let ME=null, ALL=[], FILTER='all', charts={};
 
     function toast(m){const t=$('toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(window._t);window._t=setTimeout(()=>t.classList.add('hidden'),3000);}
@@ -196,7 +197,7 @@
         $('avatar').textContent = (ME.name||'?').trim().charAt(0).toUpperCase();
         $('side-name').textContent = ME.name;
         $('side-cat').textContent = ME.category;
-        $('welcome').textContent = 'Welcome back, ' + (ME.owner || ME.name);
+        $('welcome').textContent = 'Welcome back, ' + titleCase(ME.owner || ME.name);
         $('welcome-sub').textContent = ME.category + ' • ' + (ME.location.city||'') + (ME.location.state?', '+ME.location.state:'');
         await loadBookings();
         renderPhotos();
@@ -311,7 +312,7 @@
             const data=await res.json(); if(!res.ok)throw new Error();
             ME=data.vendor;
             $('side-name').textContent=ME.name;$('side-cat').textContent=ME.category;
-            $('welcome').textContent='Welcome back, '+(ME.owner||ME.name);
+            $('welcome').textContent='Welcome back, '+titleCase(ME.owner||ME.name);
             $('welcome-sub').textContent=ME.category+' • '+(ME.location.city||'')+(ME.location.state?', '+ME.location.state:'');
             $('avatar').textContent=(ME.name||'?').trim().charAt(0).toUpperCase();
             $('profile-modal').classList.add('hidden');toast('Profile saved');

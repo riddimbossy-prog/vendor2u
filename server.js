@@ -107,12 +107,22 @@ if (process.env.CLOUDINARY_URL || process.env.CLOUDINARY_CLOUD_NAME) {
 
 function uploadToCloudinary(buffer) {
   return new Promise((resolve, reject) => {
+    // Keep the signed upload simple (just a folder) so the signature always
+    // matches. We optimize/resize at display time via the URL instead, which
+    // avoids Cloudinary signed-transformation signature mismatches.
     const stream = cloudinary.uploader.upload_stream(
-      { folder: 'vendor2me', transformation: [{ width: 1200, height: 900, crop: 'limit' }, { quality: 'auto' }] },
+      { folder: 'vendor2me' },
       (err, result) => err ? reject(err) : resolve(result)
     );
     stream.end(buffer);
   });
+}
+
+// Insert Cloudinary transformations into a delivery URL so images are served
+// resized and auto-optimized without affecting the upload signature.
+function optimizedUrl(secureUrl) {
+  if (!secureUrl || !secureUrl.includes('/upload/')) return secureUrl;
+  return secureUrl.replace('/upload/', '/upload/c_limit,w_1200,h_900/q_auto,f_auto/');
 }
 
 // --- Shape a DB row into the JSON the frontend expects ---
@@ -336,7 +346,7 @@ module.exports = (async () => {
       if (photos.length >= 5) return res.status(400).json({ error: 'You can upload up to 5 photos. Delete one first.' });
 
       const result = await uploadToCloudinary(req.file.buffer);
-      const photo = { url: result.secure_url, public_id: result.public_id };
+      const photo = { url: optimizedUrl(result.secure_url), public_id: result.public_id };
       photos.push(photo);
 
       // If this is their first photo, make it the featured one automatically
