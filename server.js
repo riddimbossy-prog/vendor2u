@@ -12,21 +12,16 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Render (and most hosts) put the app behind a proxy. This tells Express to trust
+// it, so it correctly treats HTTPS connections as secure and sets session cookies.
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- Sessions (keeps vendors logged in) ---
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'vendor2u-dev-secret-change-me',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 1000 * 60 * 60 * 24 * 30 // 30 days
-  }
-}));
+// NOTE: session middleware is set up inside the async block below, once the
+// database pool is ready, so sessions can be stored in Postgres (surviving restarts).
 
 // --- Optional email (Resend). Works without it; just logs if not configured. ---
 let resend = null;
@@ -95,6 +90,24 @@ function requireAuth(req, res, next) {
 
 module.exports = (async () => {
   const db = await require('./db');
+
+  // --- Sessions stored in Postgres, so they survive server restarts (free tier sleeps) ---
+  const pgSession = require('connect-pg-simple')(session);
+  app.use(session({
+    store: new pgSession({
+      pool: db.pool,
+      createTableIfMissing: true   // makes its own "session" table automatically
+    }),
+    secret: process.env.SESSION_SECRET || 'vendor2u-dev-secret-change-me',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 30 // 30 days
+    }
+  }));
 
   // ============ AUTH ============
   app.post('/api/auth/signup', async (req, res) => {
