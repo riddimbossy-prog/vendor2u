@@ -95,8 +95,12 @@ const upload = multer({
 let cloudinary = null;
 if (process.env.CLOUDINARY_URL || process.env.CLOUDINARY_CLOUD_NAME) {
   cloudinary = require('cloudinary').v2;
-  // Supports either the single CLOUDINARY_URL or the three separate vars
-  if (process.env.CLOUDINARY_CLOUD_NAME) {
+  // Prefer the single CLOUDINARY_URL when present — the SDK reads it automatically
+  // and it's the most reliable (no chance of a mistyped separate secret). Fall
+  // back to the three separate vars only if the URL isn't set.
+  if (process.env.CLOUDINARY_URL) {
+    cloudinary.config(); // reads CLOUDINARY_URL from the environment automatically
+  } else if (process.env.CLOUDINARY_CLOUD_NAME) {
     cloudinary.config({
       cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
       api_key: process.env.CLOUDINARY_API_KEY,
