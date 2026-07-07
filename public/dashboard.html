@@ -6,6 +6,7 @@
     <title>Dashboard - Vendor2Me</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script>
         tailwind.config = { theme: { extend: { colors: {
             navy:   { DEFAULT: '#400880', 700: '#33066B', 800: '#280552', 900: '#1C043A' },
@@ -14,62 +15,122 @@
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
-        body { font-family: 'Inter', system-ui, sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap');
+        body { font-family: 'Inter', system-ui, sans-serif; background: linear-gradient(135deg,#f4f0fb 0%, #ece4f7 100%); }
         .heading-font { font-family: 'Playfair Display', sans-serif; }
-        body { background: linear-gradient(135deg, #f7f5fb 0%, #f0ebf9 100%); min-height:100vh; }
         .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 8px 32px rgba(64,8,128,0.08); }
+        .sidebar-grad { background: linear-gradient(160deg,#1C043A 0%, #400880 100%); }
+        .nav-item { transition: background .2s ease; }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.12); }
+        .nav-item.active { border-left: 3px solid #E0A010; }
         .stat-card { transition: transform .2s ease; }
         .stat-card:hover { transform: translateY(-3px); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: rgba(64,8,128,0.2); border-radius: 4px; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); position:fixed; z-index:60; height:100%; } .sidebar.open { transform:translateX(0); } .main-area { margin-left:0 !important; } }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-900 min-h-screen">
-    <nav class="text-white" style="background:linear-gradient(135deg,#1C043A,#400880);">
-        <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-            <a href="/" class="flex items-center gap-2.5">
-                <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-base font-extrabold tracking-tight text-navy">V<span class="text-brand">2</span>M</div>
-                <span class="text-xl font-bold">Vendor<span class="text-brand">2</span>Me</span>
-            </a>
-            <div class="flex items-center gap-4 text-sm">
-                <a href="/" class="text-gray-300 hover:text-white">View site</a>
-                <button onclick="logout()" class="text-gray-300 hover:text-white">Log out</button>
+<body class="min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar sidebar-grad text-white w-64 flex-shrink-0 flex flex-col fixed h-full">
+            <div class="p-6 border-b border-white/10">
+                <a href="/" class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-lg font-extrabold tracking-tight text-navy">V<span class="text-brand">2</span>M</div>
+                    <span class="text-xl font-bold">Vendor<span class="text-brand">2</span>Me</span>
+                </a>
             </div>
-        </div>
-    </nav>
+            <!-- Profile block -->
+            <div class="p-6 text-center border-b border-white/10">
+                <div id="avatar" class="w-20 h-20 rounded-full mx-auto bg-white/15 flex items-center justify-center text-3xl font-bold mb-3"></div>
+                <div id="side-name" class="font-semibold text-lg leading-tight"></div>
+                <div id="side-cat" class="text-white/60 text-sm mt-1"></div>
+            </div>
+            <!-- Nav -->
+            <nav class="flex-1 py-4">
+                <a class="nav-item active flex items-center gap-3 px-6 py-3 text-sm cursor-pointer"><i class="fa-solid fa-gauge-high w-5"></i> Overview</a>
+                <a onclick="scrollToEl('requests-panel')" class="nav-item flex items-center gap-3 px-6 py-3 text-sm cursor-pointer"><i class="fa-solid fa-inbox w-5"></i> Requests</a>
+                <a onclick="openProfile()" class="nav-item flex items-center gap-3 px-6 py-3 text-sm cursor-pointer"><i class="fa-solid fa-user-pen w-5"></i> Edit Profile</a>
+                <a href="/" class="nav-item flex items-center gap-3 px-6 py-3 text-sm cursor-pointer"><i class="fa-solid fa-globe w-5"></i> View Site</a>
+            </nav>
+            <div class="p-6 border-t border-white/10">
+                <button onclick="logout()" class="w-full flex items-center gap-3 text-sm text-white/80 hover:text-white"><i class="fa-solid fa-right-from-bracket w-5"></i> Log out</button>
+            </div>
+        </aside>
 
-    <main class="max-w-5xl mx-auto px-6 py-10">
-        <div id="loading" class="text-center text-gray-400 py-20">Loading your dashboard…</div>
-
-        <div id="dash" class="hidden">
-            <!-- Header -->
-            <div class="flex items-start justify-between gap-4 mb-8">
-                <div>
-                    <h1 id="biz-name" class="text-3xl font-bold heading-font"></h1>
-                    <p id="biz-sub" class="text-gray-500 mt-1"></p>
+        <!-- Main -->
+        <div class="main-area flex-1 ml-64">
+            <!-- Topbar -->
+            <header class="glass sticky top-0 z-40 px-8 py-4 flex items-center justify-between border-b border-white/40">
+                <div class="flex items-center gap-3">
+                    <button onclick="document.getElementById('sidebar').classList.toggle('open')" class="md:hidden text-navy"><i class="fa-solid fa-bars text-xl"></i></button>
+                    <h1 class="text-xl font-bold text-navy heading-font">Dashboard</h1>
                 </div>
-                <button onclick="openProfile()" class="px-4 py-2 border border-gray-300 rounded-xl text-sm font-medium hover:bg-white">Edit profile</button>
-            </div>
+                <button onclick="openProfile()" class="flex items-center gap-2 text-sm text-navy font-medium"><i class="fa-solid fa-user-pen"></i> Edit profile</button>
+            </header>
 
-            <!-- Stats -->
-            <div class="grid grid-cols-4 gap-4 mb-8">
-                <div class="glass stat-card rounded-2xl p-5"><div class="text-3xl font-bold text-navy" id="s-total">0</div><div class="text-sm text-gray-500 mt-1">Total</div></div>
-                <div class="glass stat-card rounded-2xl p-5"><div class="text-3xl font-bold text-brand" id="s-new">0</div><div class="text-sm text-gray-500 mt-1">New</div></div>
-                <div class="glass stat-card rounded-2xl p-5"><div class="text-3xl font-bold text-green-600" id="s-booked">0</div><div class="text-sm text-gray-500 mt-1">Booked</div></div>
-                <div class="glass stat-card rounded-2xl p-5"><div class="text-3xl font-bold text-gray-700" id="s-week">0</div><div class="text-sm text-gray-500 mt-1">This week</div></div>
-            </div>
+            <main class="p-8">
+                <div id="loading" class="text-center text-gray-400 py-20">Loading your dashboard…</div>
 
-            <!-- Filter -->
-            <div class="flex gap-2 mb-4 text-sm" id="filters"></div>
+                <div id="dash" class="hidden">
+                    <div class="mb-8">
+                        <h2 id="welcome" class="text-3xl font-bold text-navy heading-font"></h2>
+                        <p id="welcome-sub" class="text-gray-500 mt-1"></p>
+                    </div>
 
-            <h2 class="text-lg font-semibold mb-4">Quote Requests</h2>
-            <div id="requests"></div>
+                    <!-- Stat cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+                        <div class="glass stat-card rounded-2xl p-5">
+                            <div class="flex items-center justify-between"><span class="text-gray-500 text-sm">Total requests</span><div class="w-9 h-9 rounded-xl bg-navy/10 flex items-center justify-center text-navy"><i class="fa-solid fa-inbox"></i></div></div>
+                            <div class="text-3xl font-extrabold text-navy mt-3" id="s-total">0</div>
+                        </div>
+                        <div class="glass stat-card rounded-2xl p-5">
+                            <div class="flex items-center justify-between"><span class="text-gray-500 text-sm">New</span><div class="w-9 h-9 rounded-xl bg-brand/15 flex items-center justify-center text-brand-700"><i class="fa-solid fa-star"></i></div></div>
+                            <div class="text-3xl font-extrabold text-brand-700 mt-3" id="s-new">0</div>
+                        </div>
+                        <div class="glass stat-card rounded-2xl p-5">
+                            <div class="flex items-center justify-between"><span class="text-gray-500 text-sm">Booked</span><div class="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center text-green-600"><i class="fa-solid fa-circle-check"></i></div></div>
+                            <div class="text-3xl font-extrabold text-green-600 mt-3" id="s-booked">0</div>
+                        </div>
+                        <div class="glass stat-card rounded-2xl p-5">
+                            <div class="flex items-center justify-between"><span class="text-gray-500 text-sm">This week</span><div class="w-9 h-9 rounded-xl bg-navy/10 flex items-center justify-center text-navy"><i class="fa-solid fa-calendar-week"></i></div></div>
+                            <div class="text-3xl font-extrabold text-navy mt-3" id="s-week">0</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="grid lg:grid-cols-3 gap-6 mb-8">
+                        <div class="glass rounded-2xl p-6 lg:col-span-2">
+                            <h3 class="font-semibold text-navy mb-4">Requests over time</h3>
+                            <canvas id="chart-time" height="120"></canvas>
+                        </div>
+                        <div class="glass rounded-2xl p-6">
+                            <h3 class="font-semibold text-navy mb-4">Status breakdown</h3>
+                            <canvas id="chart-status" height="200"></canvas>
+                        </div>
+                    </div>
+                    <div class="glass rounded-2xl p-6 mb-8">
+                        <h3 class="font-semibold text-navy mb-4">Requests by event type</h3>
+                        <canvas id="chart-type" height="90"></canvas>
+                    </div>
+
+                    <!-- Requests list -->
+                    <div id="requests-panel">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-navy">Quote Requests</h3>
+                            <div class="flex gap-2 text-sm" id="filters"></div>
+                        </div>
+                        <div id="requests"></div>
+                    </div>
+                </div>
+            </main>
         </div>
-    </main>
+    </div>
 
     <!-- Edit profile modal -->
-    <div id="profile-modal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onclick="if(event.target===this)this.classList.add('hidden')">
-        <div class="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-8">
-            <h2 class="text-2xl font-bold mb-6 heading-font">Edit your profile</h2>
+    <div id="profile-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-[70] p-4" onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="glass rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-8 bg-white/90">
+            <h2 class="text-2xl font-bold mb-6 heading-font text-navy">Edit your profile</h2>
             <form id="profile-form" onsubmit="saveProfile(event)" class="space-y-4">
                 <input name="name" placeholder="Business name" class="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand">
                 <input name="owner" placeholder="Your name" class="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand">
@@ -85,164 +146,154 @@
                 <textarea name="bio" rows="3" placeholder="Describe your services…" class="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-brand"></textarea>
                 <div class="flex gap-3">
                     <button type="submit" class="flex-1 py-3 bg-brand hover:bg-brand-700 text-white rounded-2xl font-semibold">Save</button>
-                    <button type="button" onclick="$('profile-modal').classList.add('hidden')" class="px-6 py-3 border border-gray-300 rounded-2xl">Cancel</button>
+                    <button type="button" onclick="document.getElementById('profile-modal').classList.add('hidden')" class="px-6 py-3 border border-gray-300 rounded-2xl">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <div id="toast" class="hidden fixed bottom-6 right-6 bg-gray-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-50"></div>
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-navy text-white px-6 py-4 rounded-2xl shadow-2xl z-[80]"></div>
 
     <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    let ME = null, ALL = [], FILTER = 'all';
+    let ME=null, ALL=[], FILTER='all', charts={};
 
-    function toast(m) { const t=$('toast'); t.textContent=m; t.classList.remove('hidden'); clearTimeout(window._t); window._t=setTimeout(()=>t.classList.add('hidden'),3000); }
-    function timeAgo(iso) {
-        if (!iso) return '';
-        const then = new Date(iso);
-        const d = (Date.now() - then.getTime())/1000;
-        if (isNaN(d)) return '';
-        if (d < 3600) return Math.max(1,Math.round(d/60))+' min ago';
-        if (d < 86400) return Math.round(d/3600)+' hr ago';
-        return Math.round(d/86400)+' day(s) ago';
-    }
+    function toast(m){const t=$('toast');t.textContent=m;t.classList.remove('hidden');clearTimeout(window._t);window._t=setTimeout(()=>t.classList.add('hidden'),3000);}
+    function scrollToEl(id){$(id).scrollIntoView({behavior:'smooth'});}
+    function timeAgo(iso){if(!iso)return'';const d=(Date.now()-new Date(iso).getTime())/1000;if(isNaN(d))return'';if(d<3600)return Math.max(1,Math.round(d/60))+' min ago';if(d<86400)return Math.round(d/3600)+' hr ago';return Math.round(d/86400)+' day(s) ago';}
 
-    async function init() {
-        // Must be logged in
+    async function init(){
         const me = await (await fetch('/api/auth/me')).json();
-        if (!me.loggedIn) { window.location.href = '/login'; return; }
+        if(!me.loggedIn){window.location.href='/login';return;}
         ME = me.vendor;
         $('loading').classList.add('hidden');
         $('dash').classList.remove('hidden');
-        $('biz-name').textContent = ME.name;
-        $('biz-sub').textContent = ME.category + ' • ' + (ME.location.city || '') + (ME.location.state ? ', ' + ME.location.state : '');
+        $('avatar').textContent = (ME.name||'?').trim().charAt(0).toUpperCase();
+        $('side-name').textContent = ME.name;
+        $('side-cat').textContent = ME.category;
+        $('welcome').textContent = 'Welcome back, ' + (ME.owner || ME.name);
+        $('welcome-sub').textContent = ME.category + ' • ' + (ME.location.city||'') + (ME.location.state?', '+ME.location.state:'');
         await loadBookings();
     }
 
-    async function loadBookings() {
-        try {
-            ALL = await (await fetch('/api/my/bookings')).json();
-        } catch (e) { ALL = []; }
-        renderStats();
-        renderFilters();
-        renderList();
+    async function loadBookings(){
+        try { ALL = await (await fetch('/api/my/bookings')).json(); } catch(e){ ALL=[]; }
+        renderStats(); renderFilters(); renderList(); renderCharts();
     }
 
-    function renderStats() {
+    function renderStats(){
         $('s-total').textContent = ALL.length;
-        $('s-new').textContent = ALL.filter(b => b.status === 'new').length;
-        $('s-booked').textContent = ALL.filter(b => b.status === 'booked').length;
-        const weekAgo = Date.now() - 7*86400*1000;
-        $('s-week').textContent = ALL.filter(b => new Date(b.createdAt).getTime() > weekAgo).length;
+        $('s-new').textContent = ALL.filter(b=>b.status==='new').length;
+        $('s-booked').textContent = ALL.filter(b=>b.status==='booked').length;
+        const wk = Date.now()-7*86400*1000;
+        $('s-week').textContent = ALL.filter(b=>new Date(b.createdAt).getTime()>wk).length;
     }
 
-    function renderFilters() {
-        const counts = { all: ALL.length, new: 0, replied: 0, booked: 0, declined: 0 };
-        ALL.forEach(b => counts[b.status] = (counts[b.status]||0)+1);
-        const labels = { all:'All', new:'New', replied:'Replied', booked:'Booked', declined:'Declined' };
-        $('filters').innerHTML = Object.keys(labels).map(k =>
-            `<button onclick="setFilter('${k}')" class="px-4 py-2 rounded-xl font-medium ${FILTER===k?'bg-navy text-white':'bg-white border border-gray-200 text-gray-600'}">${labels[k]} <span class="opacity-60">${counts[k]||0}</span></button>`
-        ).join('');
-    }
-    function setFilter(f) { FILTER = f; renderFilters(); renderList(); }
+    function renderCharts(){
+        Object.values(charts).forEach(c=>c&&c.destroy());
+        const purple='#400880', gold='#E0A010';
 
-    function renderList() {
-        const list = FILTER === 'all' ? ALL : ALL.filter(b => b.status === FILTER);
-        if (!list.length) {
-            $('requests').innerHTML = '<div class="glass rounded-2xl p-12 text-center"><div class="text-5xl mb-4">📭</div><h3 class="text-xl font-semibold">Nothing here yet</h3><p class="text-gray-500 mt-2">Quote requests from customers will appear here.</p></div>';
-            return;
+        // Over time: last 14 days
+        const days=[], counts=[];
+        for(let i=13;i>=0;i--){
+            const d=new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+            const next=new Date(d); next.setDate(next.getDate()+1);
+            days.push(d.toLocaleDateString(undefined,{month:'short',day:'numeric'}));
+            counts.push(ALL.filter(b=>{const t=new Date(b.createdAt).getTime();return t>=d.getTime()&&t<next.getTime();}).length);
         }
+        charts.time = new Chart($('chart-time'), {
+            type:'line',
+            data:{labels:days,datasets:[{data:counts,borderColor:purple,backgroundColor:'rgba(64,8,128,0.1)',fill:true,tension:0.35,pointBackgroundColor:gold,pointRadius:3}]},
+            options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}},responsive:true,maintainAspectRatio:true}
+        });
+
+        // Status donut
+        const statuses=['new','replied','booked','declined'];
+        const stCounts=statuses.map(s=>ALL.filter(b=>b.status===s).length);
+        charts.status = new Chart($('chart-status'), {
+            type:'doughnut',
+            data:{labels:['New','Replied','Booked','Declined'],datasets:[{data:stCounts,backgroundColor:[gold,'#6D28D9',purple,'#cbd5e1'],borderWidth:0}]},
+            options:{cutout:'65%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}}
+        });
+
+        // By event type
+        const types={};
+        ALL.forEach(b=>{const t=(b.eventType||'Other').trim()||'Other';types[t]=(types[t]||0)+1;});
+        charts.type = new Chart($('chart-type'), {
+            type:'bar',
+            data:{labels:Object.keys(types),datasets:[{data:Object.values(types),backgroundColor:purple,borderRadius:8,barThickness:28}]},
+            options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}},responsive:true,maintainAspectRatio:true}
+        });
+    }
+
+    function renderFilters(){
+        const c={all:ALL.length,new:0,replied:0,booked:0,declined:0};
+        ALL.forEach(b=>c[b.status]=(c[b.status]||0)+1);
+        const L={all:'All',new:'New',replied:'Replied',booked:'Booked',declined:'Declined'};
+        $('filters').innerHTML = Object.keys(L).map(k=>`<button onclick="setFilter('${k}')" class="px-3 py-1.5 rounded-xl font-medium ${FILTER===k?'bg-navy text-white':'bg-white/70 text-gray-600'}">${L[k]} <span class="opacity-60">${c[k]||0}</span></button>`).join('');
+    }
+    function setFilter(f){FILTER=f;renderFilters();renderList();}
+
+    function renderList(){
+        const list = FILTER==='all'?ALL:ALL.filter(b=>b.status===FILTER);
+        if(!list.length){$('requests').innerHTML='<div class="glass rounded-2xl p-12 text-center"><div class="text-5xl mb-4">📭</div><h3 class="text-xl font-semibold text-navy">Nothing here yet</h3><p class="text-gray-500 mt-2">Quote requests from customers will appear here.</p></div>';return;}
         $('requests').innerHTML = list.map(card).join('');
     }
 
-    function statusBadge(s) {
-        const map = { new:'bg-brand-50 text-brand-700', replied:'bg-blue-50 text-blue-700', booked:'bg-green-50 text-green-700', declined:'bg-gray-100 text-gray-500' };
-        return `<span class="text-xs px-2 py-0.5 rounded-lg font-medium ${map[s]||''}">${s}</span>`;
-    }
+    function statusBadge(s){const m={new:'bg-brand-50 text-brand-700',replied:'bg-purple-50 text-purple-700',booked:'bg-green-50 text-green-700',declined:'bg-gray-100 text-gray-500'};return `<span class="text-xs px-2 py-0.5 rounded-lg font-medium ${m[s]||''}">${s}</span>`;}
 
-    function card(b) {
-        return `
-        <div class="glass rounded-2xl p-6 mb-4">
+    function card(b){
+        return `<div class="glass rounded-2xl p-6 mb-4">
             <div class="flex justify-between items-start gap-4">
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-lg">${esc(b.customerName) || 'Customer'}</span>
-                        ${statusBadge(b.status)}
-                    </div>
-                    <div class="text-sm text-gray-500 mt-0.5">${timeAgo(b.createdAt)}</div>
-                </div>
-                <div class="text-right text-sm">
-                    ${b.eventType ? '<div class="font-medium">'+esc(b.eventType)+'</div>' : ''}
-                    ${b.eventDate ? '<div class="text-gray-500">'+esc(b.eventDate)+'</div>' : ''}
-                </div>
+                <div><div class="flex items-center gap-2"><span class="font-semibold text-lg text-navy">${esc(b.customerName)||'Customer'}</span>${statusBadge(b.status)}</div>
+                <div class="text-sm text-gray-500 mt-0.5">${timeAgo(b.createdAt)}</div></div>
+                <div class="text-right text-sm">${b.eventType?'<div class="font-medium">'+esc(b.eventType)+'</div>':''}${b.eventDate?'<div class="text-gray-500">'+esc(b.eventDate)+'</div>':''}</div>
             </div>
-            ${b.message ? '<p class="mt-4 text-gray-700 bg-gray-50 rounded-xl p-4">'+esc(b.message)+'</p>' : ''}
+            ${b.message?'<p class="mt-4 text-gray-700 bg-white/50 rounded-xl p-4">'+esc(b.message)+'</p>':''}
             <div class="mt-4 flex flex-wrap items-center gap-3 text-sm">
-                ${b.customerEmail ? `<a href="mailto:${esc(b.customerEmail)}" class="inline-flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-700 text-white rounded-xl font-medium"><i class="fa-solid fa-envelope"></i> Reply</a>` : ''}
-                ${b.customerEmail ? '<span class="text-gray-500">'+esc(b.customerEmail)+'</span>' : ''}
-                <span class="ml-auto flex items-center gap-1">
-                    <span class="text-gray-400 mr-1">Mark:</span>
-                    ${['new','replied','booked','declined'].map(s =>
-                        `<button onclick="setStatus('${b.id}','${s}')" class="px-2.5 py-1 rounded-lg ${b.status===s?'bg-navy text-white':'bg-gray-100 text-gray-600 hover:bg-gray-200'}">${s}</button>`
-                    ).join('')}
+                ${b.customerEmail?`<a href="mailto:${esc(b.customerEmail)}" class="inline-flex items-center gap-2 px-4 py-2 bg-brand hover:bg-brand-700 text-white rounded-xl font-medium"><i class="fa-solid fa-envelope"></i> Reply</a>`:''}
+                ${b.customerEmail?'<span class="text-gray-500">'+esc(b.customerEmail)+'</span>':''}
+                <span class="ml-auto flex items-center gap-1"><span class="text-gray-400 mr-1">Mark:</span>
+                ${['new','replied','booked','declined'].map(s=>`<button onclick="setStatus('${b.id}','${s}')" class="px-2.5 py-1 rounded-lg ${b.status===s?'bg-navy text-white':'bg-white/70 text-gray-600 hover:bg-white'}">${s}</button>`).join('')}
                 </span>
             </div>
         </div>`;
     }
 
-    async function setStatus(id, status) {
-        try {
-            const res = await fetch('/api/my/bookings/'+id+'/status', {
-                method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ status })
-            });
-            if (!res.ok) throw new Error();
-            const b = ALL.find(x => x.id === id); if (b) b.status = status;
-            renderStats(); renderFilters(); renderList();
-            toast('Updated to "' + status + '"');
-        } catch (e) { toast('Could not update'); }
+    async function setStatus(id,status){
+        try{
+            const res=await fetch('/api/my/bookings/'+id+'/status',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+            if(!res.ok)throw new Error();
+            const b=ALL.find(x=>x.id===id); if(b)b.status=status;
+            renderStats();renderFilters();renderList();renderCharts();
+            toast('Updated to "'+status+'"');
+        }catch(e){toast('Could not update');}
     }
 
-    function openProfile() {
-        const f = $('profile-form');
-        f.name.value = ME.name || '';
-        f.owner.value = ME.owner || '';
-        f.city.value = ME.location.city || '';
-        f.state.value = ME.location.state || '';
-        f.priceMin.value = ME.priceRange.min || '';
-        f.priceUnit.value = ME.priceRange.unit || '';
-        f.cultural.value = (ME.culturalSpecialties || []).join(', ');
-        f.bio.value = ME.bio || '';
+    function openProfile(){
+        const f=$('profile-form');
+        f.name.value=ME.name||'';f.owner.value=ME.owner||'';f.city.value=ME.location.city||'';f.state.value=ME.location.state||'';
+        f.priceMin.value=ME.priceRange.min||'';f.priceUnit.value=ME.priceRange.unit||'';
+        f.cultural.value=(ME.culturalSpecialties||[]).join(', ');f.bio.value=ME.bio||'';
         $('profile-modal').classList.remove('hidden');
     }
-
-    async function saveProfile(e) {
-        e.preventDefault();
-        const f = e.target;
-        const payload = {
-            name: f.name.value, owner: f.owner.value, city: f.city.value, state: f.state.value,
-            priceMin: Number(f.priceMin.value) || 0, priceUnit: f.priceUnit.value,
-            culturalSpecialties: f.cultural.value.split(',').map(s => s.trim()).filter(Boolean),
-            bio: f.bio.value
-        };
-        try {
-            const res = await fetch('/api/vendors/me', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-            const data = await res.json();
-            if (!res.ok) throw new Error();
-            ME = data.vendor;
-            $('biz-name').textContent = ME.name;
-            $('biz-sub').textContent = ME.category + ' • ' + (ME.location.city||'') + (ME.location.state ? ', '+ME.location.state : '');
-            $('profile-modal').classList.add('hidden');
-            toast('Profile saved');
-        } catch (e) { toast('Could not save'); }
+    async function saveProfile(e){
+        e.preventDefault();const f=e.target;
+        const payload={name:f.name.value,owner:f.owner.value,city:f.city.value,state:f.state.value,priceMin:Number(f.priceMin.value)||0,priceUnit:f.priceUnit.value,culturalSpecialties:f.cultural.value.split(',').map(s=>s.trim()).filter(Boolean),bio:f.bio.value};
+        try{
+            const res=await fetch('/api/vendors/me',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            const data=await res.json(); if(!res.ok)throw new Error();
+            ME=data.vendor;
+            $('side-name').textContent=ME.name;$('side-cat').textContent=ME.category;
+            $('welcome').textContent='Welcome back, '+(ME.owner||ME.name);
+            $('welcome-sub').textContent=ME.category+' • '+(ME.location.city||'')+(ME.location.state?', '+ME.location.state:'');
+            $('avatar').textContent=(ME.name||'?').trim().charAt(0).toUpperCase();
+            $('profile-modal').classList.add('hidden');toast('Profile saved');
+        }catch(e){toast('Could not save');}
     }
 
-    async function logout() {
-        await fetch('/api/auth/logout', { method: 'POST' });
-        window.location.href = '/';
-    }
-
+    async function logout(){await fetch('/api/auth/logout',{method:'POST'});window.location.href='/';}
     window.onload = init;
     </script>
 </body>
