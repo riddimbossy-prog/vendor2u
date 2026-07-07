@@ -94,23 +94,35 @@ const upload = multer({
 
 let cloudinary = null;
 if (process.env.CLOUDINARY_URL || process.env.CLOUDINARY_CLOUD_NAME) {
-  cloudinary = require('cloudinary').v2;
-  if (process.env.CLOUDINARY_URL) {
-    cloudinary.config(); // reads CLOUDINARY_URL from the environment automatically
-  } else if (process.env.CLOUDINARY_CLOUD_NAME) {
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET
-    });
+  try {
+    // Guard against a common mistake: value pasted with the "CLOUDINARY_URL=" prefix.
+    if (process.env.CLOUDINARY_URL && process.env.CLOUDINARY_URL.startsWith('CLOUDINARY_URL=')) {
+      process.env.CLOUDINARY_URL = process.env.CLOUDINARY_URL.replace(/^CLOUDINARY_URL=/, '').trim();
+      console.log('[cloudinary] stripped stray "CLOUDINARY_URL=" prefix from the value');
+    }
+    if (process.env.CLOUDINARY_URL) process.env.CLOUDINARY_URL = process.env.CLOUDINARY_URL.trim();
+
+    cloudinary = require('cloudinary').v2;
+    if (process.env.CLOUDINARY_URL) {
+      cloudinary.config(); // reads CLOUDINARY_URL from the environment automatically
+    } else if (process.env.CLOUDINARY_CLOUD_NAME) {
+      cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+      });
+    }
+    const cfg = cloudinary.config();
+    console.log('[cloudinary] configured via',
+      process.env.CLOUDINARY_URL ? 'CLOUDINARY_URL' : 'separate vars',
+      '| cloud_name:', cfg.cloud_name,
+      '| api_key:', cfg.api_key,
+      '| secret length:', cfg.api_secret ? cfg.api_secret.length : 0);
+  } catch (e) {
+    // A bad Cloudinary config must NOT crash the whole site — just disable uploads.
+    cloudinary = null;
+    console.error('[cloudinary] config failed, photo uploads disabled:', e.message);
   }
-  // Safe diagnostic: logs which method + cloud name + secret LENGTH (never the secret)
-  const cfg = cloudinary.config();
-  console.log('[cloudinary] configured via',
-    process.env.CLOUDINARY_URL ? 'CLOUDINARY_URL' : 'separate vars',
-    '| cloud_name:', cfg.cloud_name,
-    '| api_key:', cfg.api_key,
-    '| secret length:', cfg.api_secret ? cfg.api_secret.length : 0);
 } else {
   console.log('[cloudinary] NOT configured (no env vars found)');
 }
