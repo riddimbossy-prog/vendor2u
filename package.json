@@ -1,6 +1,6 @@
 {
   "name": "vendor2u",
-  "version": "2.0.0",
+  "version": "3.1.0",
   "description": "Vendor2U.com - African & Multicultural Event Vendor Marketplace",
   "main": "server.js",
   "scripts": {
@@ -9,10 +9,14 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
     "connect-pg-simple": "^9.0.1",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "express-rate-limit": "^8.0.0",
     "express-session": "^1.19.0",
+    "helmet": "^8.2.0",
+    "multer": "^2.2.0",
     "pg": "^8.22.0",
     "resend": "^6.17.1",
     "uuid": "^10.0.0"

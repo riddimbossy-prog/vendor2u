@@ -8,7 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
     <script>
-        tailwind.config = { theme: { extend: { colors: {
+        (function(){ try{ if(localStorage.getItem('v2m-theme')==='dark') document.documentElement.classList.add('dark'); }catch(e){} })();
+        tailwind.config = { darkMode:'class', theme: { extend: { colors: {
             navy:   { DEFAULT: '#400880', 700: '#33066B', 800: '#280552', 900: '#1C043A' },
             brand:  { DEFAULT: '#E0A010', 600: '#E0A010', 700: '#B8830C', 50: '#FBF3DF', 100: '#F6E6BC' }
         }}}};
@@ -18,6 +19,13 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap');
         body { font-family: 'Inter', system-ui, sans-serif; background: linear-gradient(135deg,#f4f0fb 0%, #ece4f7 100%); }
         .heading-font { font-family: 'Playfair Display', sans-serif; }
+        html.dark body { background: #140627 !important; color: #e7e2f0; }
+        html.dark .glass { background: rgba(40,5,82,0.55) !important; border-color: rgba(255,255,255,0.08) !important; box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important; }
+        html.dark .text-navy { color: #c9b6ee !important; }
+        html.dark .text-gray-500,html.dark .text-gray-600,html.dark .text-gray-700 { color:#b8afc9 !important; }
+        html.dark .bg-white,html.dark .bg-white\/90 { background: rgba(40,5,82,0.7) !important; }
+        html.dark input,html.dark textarea,html.dark select { background: rgba(20,6,39,0.6) !important; color:#e7e2f0 !important; border-color: rgba(255,255,255,0.1) !important; }
+
         .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 8px 32px rgba(64,8,128,0.08); }
         .sidebar-grad { background: linear-gradient(160deg,#1C043A 0%, #400880 100%); }
         .nav-item { transition: background .2s ease; }
@@ -66,7 +74,7 @@
                     <button onclick="document.getElementById('sidebar').classList.toggle('open')" class="md:hidden text-navy"><i class="fa-solid fa-bars text-xl"></i></button>
                     <h1 class="text-xl font-bold text-navy heading-font">Dashboard</h1>
                 </div>
-                <button onclick="openProfile()" class="flex items-center gap-2 text-sm text-navy font-medium"><i class="fa-solid fa-user-pen"></i> Edit profile</button>
+                <div class="flex items-center gap-3"><button onclick="toggleTheme()" aria-label="Toggle dark mode" class="w-9 h-9 rounded-xl flex items-center justify-center text-navy hover:bg-navy/10"><i id="theme-icon" class="fa-solid fa-moon"></i></button><button onclick="openProfile()" class="flex items-center gap-2 text-sm text-navy font-medium"><i class="fa-solid fa-user-pen"></i> Edit profile</button></div>
             </header>
 
             <main class="p-8">
@@ -96,6 +104,22 @@
                             <div class="flex items-center justify-between"><span class="text-gray-500 text-sm">This week</span><div class="w-9 h-9 rounded-xl bg-navy/10 flex items-center justify-center text-navy"><i class="fa-solid fa-calendar-week"></i></div></div>
                             <div class="text-3xl font-extrabold text-navy mt-3" id="s-week">0</div>
                         </div>
+                    </div>
+
+                    <!-- Photos -->
+                    <div class="glass rounded-2xl p-6 mb-8">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="font-semibold text-navy">My Photos</h3>
+                                <p class="text-sm text-gray-500">Upload up to 5. Tap a photo to feature it on your listing card.</p>
+                            </div>
+                            <label id="upload-btn" class="cursor-pointer px-4 py-2 bg-brand hover:bg-brand-700 text-white rounded-xl text-sm font-medium flex items-center gap-2">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+                                <input id="photo-input" type="file" accept="image/*" class="hidden" onchange="uploadPhoto(this)">
+                            </label>
+                        </div>
+                        <div id="photo-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3"></div>
+                        <p id="photo-hint" class="text-sm text-gray-400 mt-3 hidden">No photos yet — upload your best work so customers can see it.</p>
                     </div>
 
                     <!-- Charts -->
@@ -175,6 +199,7 @@
         $('welcome').textContent = 'Welcome back, ' + (ME.owner || ME.name);
         $('welcome-sub').textContent = ME.category + ' • ' + (ME.location.city||'') + (ME.location.state?', '+ME.location.state:'');
         await loadBookings();
+        renderPhotos();
     }
 
     async function loadBookings(){
@@ -293,7 +318,66 @@
         }catch(e){toast('Could not save');}
     }
 
+    // ---------- Photos ----------
+    function renderPhotos(){
+        const grid = $('photo-grid');
+        const photos = ME.photos || [];
+        $('photo-hint').classList.toggle('hidden', photos.length>0);
+        // hide upload button when at 5
+        $('upload-btn').style.display = photos.length>=5 ? 'none':'flex';
+        grid.innerHTML = photos.map(p => {
+            const isFeatured = ME.featuredImage === p.url;
+            return `<div class="relative group rounded-xl overflow-hidden aspect-square ${isFeatured?'ring-2 ring-brand':''}">
+                <img src="${esc(p.url)}" class="w-full h-full object-cover cursor-pointer" onclick="setFeatured('${esc(p.url)}')">
+                ${isFeatured?'<span class="absolute top-1.5 left-1.5 text-[10px] bg-brand text-white px-2 py-0.5 rounded-lg font-semibold">Featured</span>':''}
+                <button onclick="deletePhoto('${esc(p.public_id)}')" class="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 hover:bg-red-600 text-white rounded-lg text-xs opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-trash"></i></button>
+            </div>`;
+        }).join('');
+    }
+
+    async function uploadPhoto(inputEl){
+        const file = inputEl.files[0];
+        if(!file) return;
+        if(file.size > 5*1024*1024){ toast('Image must be under 5 MB'); inputEl.value=''; return; }
+        toast('Uploading…');
+        const fd = new FormData(); fd.append('photo', file);
+        try{
+            const res = await fetch('/api/my/photos', { method:'POST', body: fd });
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.error||'Upload failed');
+            ME.photos = data.photos; ME.featuredImage = data.featuredImage;
+            renderPhotos(); toast('Photo added');
+        }catch(e){ toast(e.message||'Upload failed'); }
+        inputEl.value='';
+    }
+
+    async function deletePhoto(public_id){
+        try{
+            const res = await fetch('/api/my/photos', { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ public_id }) });
+            const data = await res.json();
+            if(!res.ok) throw new Error();
+            ME.photos = data.photos; ME.featuredImage = data.featuredImage;
+            renderPhotos(); toast('Photo removed');
+        }catch(e){ toast('Could not delete'); }
+    }
+
+    async function setFeatured(url){
+        if(ME.featuredImage===url) return;
+        try{
+            const res = await fetch('/api/my/photos/featured', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url }) });
+            if(!res.ok) throw new Error();
+            ME.featuredImage = url; renderPhotos(); toast('Featured photo updated');
+        }catch(e){ toast('Could not update'); }
+    }
+
     async function logout(){await fetch('/api/auth/logout',{method:'POST'});window.location.href='/';}
+    
+    function toggleTheme(){
+        const dark = document.documentElement.classList.toggle('dark');
+        try{ localStorage.setItem('v2m-theme', dark?'dark':'light'); }catch(e){}
+        const ic=document.getElementById('theme-icon'); if(ic) ic.className = dark?'fa-solid fa-sun':'fa-solid fa-moon';
+    }
+
     window.onload = init;
     </script>
 </body>

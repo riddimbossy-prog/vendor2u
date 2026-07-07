@@ -7,8 +7,11 @@
     <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
+        // Apply saved theme before render to avoid a flash
+        (function(){ try{ if(localStorage.getItem('v2m-theme')==='dark') document.documentElement.classList.add('dark'); }catch(e){} })();
         // Vendor2Me brand palette (pulled from the logo)
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -20,15 +23,37 @@
         };
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script>
+        function toggleTheme(){
+            const dark = document.documentElement.classList.toggle('dark');
+            try{ localStorage.setItem('v2m-theme', dark?'dark':'light'); }catch(e){}
+            const ic = document.getElementById('theme-icon'); if(ic) ic.className = dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
-        body { font-family: 'Inter', system-ui, sans-serif; background: #f7f5fb; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: #f7f5fb; transition: background .3s ease; }
         .heading-font { font-family: 'Playfair Display', sans-serif; }
+        /* Dark mode */
+        html.dark body { background: #140627; color: #e7e2f0; }
+        html.dark .glass { background: rgba(40,5,82,0.55); border-color: rgba(255,255,255,0.08); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+        html.dark .glass-search { background: rgba(30,4,58,0.85); }
+        html.dark .text-navy { color: #c9b6ee !important; }
+        html.dark .text-gray-500, html.dark .text-gray-600, html.dark .text-gray-700, html.dark .text-gray-900 { color: #b8afc9 !important; }
+        html.dark .bg-white { background: rgba(40,5,82,0.6) !important; }
+        html.dark .border-gray-100, html.dark .border-gray-200 { border-color: rgba(255,255,255,0.08) !important; }
+        html.dark .bg-gray-50 { background: #1a0833 !important; }
         .hero-bg {
             background:
-              radial-gradient(1200px 600px at 20% -10%, rgba(224,160,16,0.25), transparent 60%),
-              linear-gradient(135deg, rgba(28,4,58,0.92), rgba(64,8,128,0.88)),
-              url('https://picsum.photos/id/1015/2000/1200') center/cover;
+              radial-gradient(1000px 500px at 15% -10%, rgba(224,160,16,0.22), transparent 60%),
+              linear-gradient(135deg, rgba(28,4,58,0.90) 0%, rgba(40,8,120,0.82) 45%, rgba(28,4,58,0.70) 100%),
+              url('/hero.jpg') center/cover;
+        }
+        html.dark .hero-bg {
+            background:
+              radial-gradient(1000px 500px at 15% -10%, rgba(224,160,16,0.18), transparent 60%),
+              linear-gradient(135deg, rgba(15,3,30,0.94) 0%, rgba(28,5,80,0.90) 45%, rgba(15,3,30,0.82) 100%),
+              url('/hero.jpg') center/cover;
         }
         /* Glassmorphism */
         .glass {
@@ -71,6 +96,7 @@
                 </div>
             </div>
             <div class="flex items-center gap-4">
+                <button onclick="toggleTheme()" aria-label="Toggle dark mode" class="w-9 h-9 rounded-xl flex items-center justify-center text-navy hover:bg-navy/10 transition-colors"><i id="theme-icon" class="fa-solid fa-moon"></i></button>
                 <button onclick="window.location.href='/login'" class="px-5 py-2 text-sm font-medium text-navy/70 hover:text-navy transition-colors">Vendor Login</button>
                 <button onclick="window.location.href='/login'" class="px-6 py-2.5 bg-brand hover:bg-brand-700 text-white rounded-2xl text-sm font-semibold transition-all">Become a Vendor</button>
             </div>
@@ -482,7 +508,7 @@
     });
 
     // ---------- Start ----------
-    window.onload = () => { initCategories(); loadFeatured(); };
+    window.onload = () => { initCategories(); loadFeatured(); const ic=document.getElementById('theme-icon'); if(ic&&document.documentElement.classList.contains('dark')) ic.className='fa-solid fa-sun'; };
     </script>
 </body>
 </html>

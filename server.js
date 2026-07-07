@@ -7,6 +7,8 @@ const path = require('path');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const session = require('express-session');
+const helmet = require('helmet');
+const { rateLimit } = require('express-rate-limit');
 const { v4: uuidv4 } = require('uuid');
 
 const app = express();
@@ -16,9 +18,45 @@ const PORT = process.env.PORT || 5000;
 // it, so it correctly treats HTTPS connections as secure and sets session cookies.
 app.set('trust proxy', 1);
 
+// --- Security headers (Helmet) ---
+// CSP is configured to allow the CDNs the pages rely on (Tailwind, Chart.js,
+// Font Awesome, Google Fonts) plus inline scripts/styles the pages use, and the
+// remote images (picsum). Kept practical so nothing on the site breaks.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.tailwindcss.com", "https://cdnjs.cloudflare.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com", "data:"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"]
+    }
+  },
+  crossOriginEmbedderPolicy: false
+}));
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+// --- Rate limiting ---
+// A gentle global cap, plus a stricter cap on auth endpoints to stop brute-force
+// login/signup attempts. Limits are generous enough not to bother real users.
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300,                 // 300 requests / 15 min per IP
+  standardHeaders: true,
+  legacyHeaders: false
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,                  // 20 login/signup attempts / 15 min per IP
+  message: { error: 'Too many attempts. Please wait a few minutes and try again.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+app.use('/api/', generalLimiter);
 
 // NOTE: session middleware is set up inside the async block below, once the
 // database pool is ready, so sessions can be stored in Postgres (surviving restarts).
@@ -27,8 +65,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 let resend = null;
 if (process.env.RESEND_API_KEY) {
   const { Resend } = require('resend');
-  resend = new Resend(process.env.RESEND_API_KEY);
-}
+  resend = new Resend(process.env.RESEND_API_KEY);}
 const FROM_EMAIL = process.env.FROM_EMAIL || 'Vendor2U <onboarding@resend.dev>';
 const SITE_URL = process.env.SITE_URL || '';
 
@@ -39,6 +76,42 @@ async function sendEmail(to, subject, html) {
   } catch (e) {
     console.error('Email send failed:', e.message);
   }
+}
+
+// --- Photo uploads (Cloudinary). Works only if configured; endpoints report a
+// clear message if not. multer holds the uploaded file in memory briefly, then
+// we stream it to Cloudinary and store just the resulting URL in Postgres. ---
+const multer = require('multer');
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB per image
+  fileFilter: (req, file, cb) => {
+    if (/^image\/(jpe?g|png|webp|gif)$/.test(file.mimetype)) cb(null, true);
+    else cb(new Error('Only image files are allowed.'));
+  }
+});
+
+let cloudinary = null;
+if (process.env.CLOUDINARY_URL || process.env.CLOUDINARY_CLOUD_NAME) {
+  cloudinary = require('cloudinary').v2;
+  // Supports either the single CLOUDINARY_URL or the three separate vars
+  if (process.env.CLOUDINARY_CLOUD_NAME) {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+  }
+}
+
+function uploadToCloudinary(buffer) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: 'vendor2me', transformation: [{ width: 1200, height: 900, crop: 'limit' }, { quality: 'auto' }] },
+      (err, result) => err ? reject(err) : resolve(result)
+    );
+    stream.end(buffer);
+  });
 }
 
 // --- Shape a DB row into the JSON the frontend expects ---
@@ -53,7 +126,12 @@ function shapeVendor(row) {
     languages: row.languages || [],
     yearsInBusiness: row.years_in_business, verified: !!row.verified,
     availability: row.availability, tags: row.tags || [],
-    image: row.image, bio: row.bio
+    photos: row.photos || [],
+    featuredImage: row.featured_image || null,
+    // Card/profile image prefers the vendor's chosen featured photo, else their
+    // first uploaded photo, else the legacy placeholder image.
+    image: row.featured_image || ((row.photos && row.photos[0] && row.photos[0].url) || row.image),
+    bio: row.bio
   };
 }
 
@@ -110,7 +188,7 @@ module.exports = (async () => {
   }));
 
   // ============ AUTH ============
-  app.post('/api/auth/signup', async (req, res) => {
+  app.post('/api/auth/signup', authLimiter, async (req, res) => {
     try {
       const b = req.body || {};
       if (!b.name || !b.category || !b.email || !b.password) {
@@ -147,7 +225,7 @@ module.exports = (async () => {
     }
   });
 
-  app.post('/api/auth/login', async (req, res) => {
+  app.post('/api/auth/login', authLimiter, async (req, res) => {
     try {
       const { email, password } = req.body || {};
       if (!email || !password) return res.status(400).json({ error: 'Email and password required.' });
@@ -241,6 +319,79 @@ module.exports = (async () => {
     } catch (e) {
       console.error('profile update error', e);
       res.status(500).json({ error: 'Could not update profile.' });
+    }
+  });
+
+  // ============ PHOTOS (Cloudinary) ============
+  // Upload a photo (max 5 total per vendor). Returns the updated photo list.
+  app.post('/api/my/photos', requireAuth, upload.single('photo'), async (req, res) => {
+    try {
+      if (!cloudinary) return res.status(503).json({ error: 'Photo uploads are not configured yet.' });
+      if (!req.file) return res.status(400).json({ error: 'No image received.' });
+
+      const id = req.session.vendorId;
+      const vendor = await db.one('SELECT photos, featured_image FROM vendors WHERE id=$1', [id]);
+      const photos = vendor.photos || [];
+      if (photos.length >= 5) return res.status(400).json({ error: 'You can upload up to 5 photos. Delete one first.' });
+
+      const result = await uploadToCloudinary(req.file.buffer);
+      const photo = { url: result.secure_url, public_id: result.public_id };
+      photos.push(photo);
+
+      // If this is their first photo, make it the featured one automatically
+      const featured = vendor.featured_image || photo.url;
+
+      await db.query('UPDATE vendors SET photos=$1, featured_image=$2 WHERE id=$3',
+        [JSON.stringify(photos), featured, id]);
+      res.status(201).json({ success: true, photos, featuredImage: featured });
+    } catch (e) {
+      console.error('photo upload error', e);
+      res.status(500).json({ error: e.message || 'Upload failed.' });
+    }
+  });
+
+  // Delete a photo by its Cloudinary public_id
+  app.delete('/api/my/photos', requireAuth, async (req, res) => {
+    try {
+      const { public_id } = req.body || {};
+      if (!public_id) return res.status(400).json({ error: 'Which photo?' });
+      const id = req.session.vendorId;
+      const vendor = await db.one('SELECT photos, featured_image FROM vendors WHERE id=$1', [id]);
+      let photos = vendor.photos || [];
+      const removed = photos.find(p => p.public_id === public_id);
+      photos = photos.filter(p => p.public_id !== public_id);
+
+      if (cloudinary && removed) {
+        try { await cloudinary.uploader.destroy(public_id); } catch (e) { /* ignore cloud delete errors */ }
+      }
+
+      // If we removed the featured photo, fall back to the first remaining (or null)
+      let featured = vendor.featured_image;
+      if (removed && vendor.featured_image === removed.url) {
+        featured = photos[0] ? photos[0].url : null;
+      }
+      await db.query('UPDATE vendors SET photos=$1, featured_image=$2 WHERE id=$3',
+        [JSON.stringify(photos), featured, id]);
+      res.json({ success: true, photos, featuredImage: featured });
+    } catch (e) {
+      console.error('photo delete error', e);
+      res.status(500).json({ error: 'Could not delete photo.' });
+    }
+  });
+
+  // Choose which photo is featured (shows on their card)
+  app.put('/api/my/photos/featured', requireAuth, async (req, res) => {
+    try {
+      const { url } = req.body || {};
+      const id = req.session.vendorId;
+      const vendor = await db.one('SELECT photos FROM vendors WHERE id=$1', [id]);
+      const photos = vendor.photos || [];
+      if (!photos.some(p => p.url === url)) return res.status(400).json({ error: 'That photo is not in your gallery.' });
+      await db.query('UPDATE vendors SET featured_image=$1 WHERE id=$2', [url, id]);
+      res.json({ success: true, featuredImage: url });
+    } catch (e) {
+      console.error('set featured error', e);
+      res.status(500).json({ error: 'Could not set featured photo.' });
     }
   });
 

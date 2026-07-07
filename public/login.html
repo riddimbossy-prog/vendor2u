@@ -7,7 +7,8 @@
     <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        tailwind.config = { theme: { extend: { colors: {
+        (function(){ try{ if(localStorage.getItem('v2m-theme')==='dark') document.documentElement.classList.add('dark'); }catch(e){} })();
+        tailwind.config = { darkMode:'class', theme: { extend: { colors: {
             navy:   { DEFAULT: '#400880', 700: '#33066B', 800: '#280552', 900: '#1C043A' },
             brand:  { DEFAULT: '#E0A010', 600: '#E0A010', 700: '#B8830C', 50: '#FBF3DF', 100: '#F6E6BC' }
         }}}};
@@ -16,6 +17,13 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
         body { font-family: 'Inter', system-ui, sans-serif; }
         .heading-font { font-family: 'Playfair Display', sans-serif; }
+        html.dark body { background: #140627 !important; color: #e7e2f0; }
+        html.dark .glass { background: rgba(40,5,82,0.55) !important; border-color: rgba(255,255,255,0.08) !important; box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important; }
+        html.dark .text-navy { color: #c9b6ee !important; }
+        html.dark .text-gray-500,html.dark .text-gray-600,html.dark .text-gray-700 { color:#b8afc9 !important; }
+        html.dark .bg-white,html.dark .bg-white\/90 { background: rgba(40,5,82,0.7) !important; }
+        html.dark input,html.dark textarea,html.dark select { background: rgba(20,6,39,0.6) !important; color:#e7e2f0 !important; border-color: rgba(255,255,255,0.1) !important; }
+
         body { background: linear-gradient(135deg, #1C043A 0%, #400880 100%); }
         .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); border: 1px solid rgba(255,255,255,0.6); box-shadow: 0 20px 60px rgba(28,4,58,0.4); }
     </style>
@@ -23,10 +31,13 @@
 <body class="bg-gray-50 min-h-screen flex flex-col">
     <nav class="text-white" style="background:linear-gradient(135deg,#1C043A,#400880);">
         <div class="max-w-5xl mx-auto px-6 py-4">
-            <a href="/" class="flex items-center gap-2.5 w-max">
-                <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-base font-extrabold tracking-tight text-navy">V<span class="text-brand">2</span>M</div>
-                <span class="text-xl font-bold">Vendor<span class="text-brand">2</span>Me</span>
-            </a>
+            <div class="flex items-center justify-between">
+                <a href="/" class="flex items-center gap-2.5 w-max">
+                    <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center text-base font-extrabold tracking-tight text-navy">V<span class="text-brand">2</span>M</div>
+                    <span class="text-xl font-bold">Vendor<span class="text-brand">2</span>Me</span>
+                </a>
+                <button onclick="toggleTheme()" aria-label="Toggle dark mode" class="w-9 h-9 rounded-xl flex items-center justify-center text-white/80 hover:bg-white/10"><i id="theme-icon" class="fa-solid fa-moon"></i></button>
+            </div>
         </div>
     </nav>
 
@@ -120,6 +131,13 @@
             if (!res.ok) return showMsg(data.error || 'Sign up failed', true);
             window.location.href = '/dashboard';
         } catch (err) { showMsg('Could not connect. Try again.', true); }
+    }
+
+
+    function toggleTheme(){
+        const dark = document.documentElement.classList.toggle('dark');
+        try{ localStorage.setItem('v2m-theme', dark?'dark':'light'); }catch(e){}
+        const ic=document.getElementById('theme-icon'); if(ic) ic.className = dark?'fa-solid fa-sun':'fa-solid fa-moon';
     }
 
     // If already logged in, go straight to dashboard

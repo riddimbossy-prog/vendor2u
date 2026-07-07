@@ -67,6 +67,9 @@ async function init() {
   // Add columns if upgrading from an older schema (safe no-ops if they exist)
   await query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS email TEXT;`);
   await query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS password_hash TEXT;`);
+  // photos: array of {url, public_id}; featured_image: the chosen showcase URL
+  await query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS photos JSONB DEFAULT '[]';`);
+  await query(`ALTER TABLE vendors ADD COLUMN IF NOT EXISTS featured_image TEXT;`);
 
   const countRow = await one('SELECT COUNT(*)::int AS n FROM vendors');
   if (countRow.n === 0) {
